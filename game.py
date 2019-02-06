@@ -1,5 +1,6 @@
 import numpy as np
 from PIL import Image, ImageDraw
+import matplotlib.pyplot as plt
 
 class omok:
 
@@ -74,6 +75,7 @@ class omok:
     def reset(self):
         self.board = np.zeros()
         self.turn = omok.STONE_1
+        self.img, self.draw = self.getDefaultImg()
 
     def updateLth(self, action):
         c = action
@@ -111,7 +113,9 @@ class omok:
         print('=' * 38 + '\n')
 
     def showImg(self):
-        self.img.show()
+        plt.imshow(np.asarray(self.img))
+        plt.pause(3)
+        plt.close()
 
     def step(self, action): 
         self.board[action[0]][action[1]] = self.turn

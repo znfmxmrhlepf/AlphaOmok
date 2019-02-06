@@ -13,5 +13,5 @@ while not done:
     i, j = input().split()
     action = [int(i), int(j)]
     done, rwd = game.step(action)
-    game.show()
+    game.showImg()
     print(rwd)
