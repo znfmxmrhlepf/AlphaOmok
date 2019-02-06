@@ -78,13 +78,13 @@ class omok:
         self.turn = omok.STONE_1
         self.img, self.draw = self.getDefaultImg()
 
-    def updateLth(self, action):
-        c = action
+    def updateLth(self, act):
+        c = act
         maxLth = 0
         sumLth = 1
 
         for k in range(4):
-            self.lth[action[0]][action[1]][k] = 1
+            self.lth[act[0]][act[1]][k] = 1
 
         for k in range(4):
             n = [c[0] + omok.di[k], c[1] + omok.dj[k]]
@@ -96,7 +96,7 @@ class omok:
             if self.safe(b[0], b[1]) and self.board[b[0]][b[1]] == self.turn:
                 self.unionRoot(b, c, k)
 
-            lth = self.getLth(action, k)
+            lth = self.getLth(act, k)
             sumLth += lth - 1
 
             if lth > maxLth:
@@ -127,9 +127,9 @@ class omok:
         cv2.imshow('omok', self.img)
         cv2.waitKey(1)
 
-    def drawStone(self, action):
+    def drawStone(self, act):
         m = self.m
-        x, y = m * (action[0] + 1), m * (action[1] + 1)
+        x, y = m * (act[0] + 1), m * (act[1] + 1)
         color = None
 
         if self.turn == 1: color = (0, 0, 0)
@@ -137,14 +137,20 @@ class omok:
 
         self.img = cv2.circle(self.img, (x, y), 7 * self.opt.WINDOW_SIZE, color, -1)
 
-    def step(self, action): 
-        self.board[action[0]][action[1]] = self.turn
+    def step(self, act): 
+        WrongAct = 0
+        
+        if self.board[act[0]][act[1]] != 0:
+            WrongAct = 1
+
+        self.board[act[0]][act[1]] = self.turn
 
         if self.opt.SHOW_IMG:
-            self.drawStone(action)
+            self.drawStone(act)
             self.showImage()
             
-        rwd, done = self.updateLth(action)    
+        rwd, done = self.updateLth(act)    
         self.turn *= -1 # change turn
+        rwd -= WrongAct * 20
 
         return done, rwd
