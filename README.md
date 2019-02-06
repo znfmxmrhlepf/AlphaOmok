@@ -1,2 +1,3 @@
 # AlphaOmok
-# AlphaOmok
+
+DQN omok agent
