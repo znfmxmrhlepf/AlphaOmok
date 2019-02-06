@@ -1,4 +1,5 @@
 import numpy as np
+from PIL import Image, ImageDraw
 
 class omok:
 
@@ -16,7 +17,20 @@ class omok:
         self.turn = omok.STONE_1 # default
         self.opt = opt
         self.root = np.array([[[[i, j] for _ in range(4)] for j in range(opt.GAME_SIZE)] for i in range(opt.GAME_SIZE)])
-        self.lth = np.zeros([opt.GAME_SIZE, opt.GAME_SIZE, 4], dtype = int)
+        self.lth = np.zeros([opt.GAME_SIZE, opt.GAME_SIZE, 4], dtype=int)
+
+        self.img, self.draw = self.getDefaultImg()
+
+    def getDefaultImg(self):
+        imgLth = 20 * self.opt.GAME_SIZE
+        img = Image.new('RGB', (imgLth, imgLth), (255, 204, 153))
+        draw = ImageDraw.Draw(img)
+
+        for i in range(1, self.opt.GAME_SIZE + 1):
+            draw.line((20, 20 * i, imgLth - 20, 20 * i), fill = 'black')
+            draw.line((20 * i, 20, 20 * i, imgLth - 20), fill = 'black')
+
+        return img, draw
 
     def findRoot(self, pos, dir):
         pos = np.array(pos)
@@ -86,7 +100,7 @@ class omok:
 
         return sumLth, done
 
-    def show(self):
+    def showVal(self):
         print('\n' + '=' * 38)
 
         for i in range(self.opt.GAME_SIZE):
@@ -96,8 +110,19 @@ class omok:
 
         print('=' * 38 + '\n')
 
+    def showImg(self):
+        self.img.show()
+
     def step(self, action): 
         self.board[action[0]][action[1]] = self.turn
+
+        x, y = 20 * (action[0] + 1), 20 * (action[1] + 1)
+        color = None
+
+        if self.turn == 1: color = 'black'
+        else: color = 'white'
+
+        self.draw.ellipse((x-5, y-5, x+5, y+5), fill=color)
 
         for k in range(4):
             self.lth[action[0]][action[1]][k] = 1
