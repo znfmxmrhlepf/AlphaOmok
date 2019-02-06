@@ -18,17 +18,19 @@ class omok:
         self.opt = opt
         self.root = np.array([[[[i, j] for _ in range(4)] for j in range(opt.GAME_SIZE)] for i in range(opt.GAME_SIZE)])
         self.lth = np.zeros([opt.GAME_SIZE, opt.GAME_SIZE, 4], dtype=int)
-
+        self.m = 20 * self.opt.WINDOW_SIZE
         self.img = self.getDefaultImg()
+        
 
     def getDefaultImg(self):
-        imgLth = 20 * self.opt.GAME_SIZE
+        m = self.m
+        imgLth = self.opt.GAME_SIZE * m
         img = np.zeros((imgLth, imgLth, 3), np.uint8)
         img[:] = (153, 204, 255)
         
         for i in range(1, self.opt.GAME_SIZE + 1):
-            img = cv2.line(img, (20, 20 * i), (imgLth - 20, 20 * i), (0, 0, 0), 3)
-            img = cv2.line(img, (20 * i, 20), (imgLth - 20, 20 * i), (0, 0, 0), 3)
+            img = cv2.line(img, (m, m * i), (imgLth - m, m * i), (0, 0, 0), 1)
+            img = cv2.line(img, (m * i, m), (m * i, imgLth - m), (0, 0, 0), 1)
 
         return img
 
@@ -108,34 +110,39 @@ class omok:
         return rwd, done
 
     def showVal(self):
-        print('\n' + '=' * 38)
+        print('\n' + '=' * 2 * self.opt.GAME_SIZE)
 
         for i in range(self.opt.GAME_SIZE):
             for j in range(self.opt.GAME_SIZE):
                 print(self.board[i][j], end = ' ')
             print()
 
-        print('=' * 38 + '\n')
+        print('=' * 2 * self.opt.GAME_SIZE + '\n')
 
-    def showImg(self):
+    def createWindow(self):
         cv2.namedWindow('omok')
+        self.showImage()
+
+    def showImage(self):
+        cv2.imshow('omok', self.img)
+        cv2.waitKey(1)
 
     def drawStone(self, action):
-        x, y = 20 * (action[0] + 1), 20 * (action[1] + 1)
+        m = self.m
+        x, y = m * (action[0] + 1), m * (action[1] + 1)
         color = None
 
         if self.turn == 1: color = (0, 0, 0)
         else: color = (255, 255, 255)
 
-        self.img = cv2.circle(self.img, (action[0], action[1]), 5, color, -1)
+        self.img = cv2.circle(self.img, (x, y), 7 * self.opt.WINDOW_SIZE, color, -1)
 
     def step(self, action): 
         self.board[action[0]][action[1]] = self.turn
 
         if self.opt.SHOW_IMG:
             self.drawStone(action)
-            cv2.imshow('omok', self.img)
-            cv2.waitKey(200)
+            self.showImage()
             
         rwd, done = self.updateLth(action)    
         self.turn *= -1 # change turn

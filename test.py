@@ -7,8 +7,7 @@ game = omok(opts)
 done = False
 rwd = 0
 
-print(game.root.shape)
-game.showImg()
+game.createWindow()
 
 while not done:
     i, j = input().split()
