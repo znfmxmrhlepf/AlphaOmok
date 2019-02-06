@@ -8,10 +8,11 @@ done = False
 rwd = 0
 
 print(game.root.shape)
+game.showImg()
 
 while not done:
     i, j = input().split()
     action = [int(i), int(j)]
     done, rwd = game.step(action)
-    game.showImg()
+
     print(rwd)

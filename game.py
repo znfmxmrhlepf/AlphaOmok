@@ -1,6 +1,5 @@
 import numpy as np
-from PIL import Image, ImageDraw
-import matplotlib.pyplot as plt
+import cv2
 
 class omok:
 
@@ -20,18 +19,18 @@ class omok:
         self.root = np.array([[[[i, j] for _ in range(4)] for j in range(opt.GAME_SIZE)] for i in range(opt.GAME_SIZE)])
         self.lth = np.zeros([opt.GAME_SIZE, opt.GAME_SIZE, 4], dtype=int)
 
-        self.img, self.draw = self.getDefaultImg()
+        self.img = self.getDefaultImg()
 
     def getDefaultImg(self):
         imgLth = 20 * self.opt.GAME_SIZE
-        img = Image.new('RGB', (imgLth, imgLth), (255, 204, 153))
-        draw = ImageDraw.Draw(img)
-
+        img = np.zeros((imgLth, imgLth, 3), np.uint8)
+        img[:] = (153, 204, 255)
+        
         for i in range(1, self.opt.GAME_SIZE + 1):
-            draw.line((20, 20 * i, imgLth - 20, 20 * i), fill = 'black')
-            draw.line((20 * i, 20, 20 * i, imgLth - 20), fill = 'black')
+            img = cv2.line(img, (20, 20 * i), (imgLth - 20, 20 * i), (0, 0, 0), 3)
+            img = cv2.line(img, (20 * i, 20), (imgLth - 20, 20 * i), (0, 0, 0), 3)
 
-        return img, draw
+        return img
 
     def findRoot(self, pos, dir):
         pos = np.array(pos)
@@ -83,6 +82,9 @@ class omok:
         sumLth = 1
 
         for k in range(4):
+            self.lth[action[0]][action[1]][k] = 1
+
+        for k in range(4):
             n = [c[0] + omok.di[k], c[1] + omok.dj[k]]
             b = [c[0] - omok.di[k], c[1] - omok.dj[k]]
 
@@ -98,9 +100,12 @@ class omok:
             if lth > maxLth:
                 maxLth = lth
 
+        rwd = sumLth
         done = (maxLth >= self.opt.MAX_LENGTH)
+        
+        if done:    rwd += 10
 
-        return sumLth, done
+        return rwd, done
 
     def showVal(self):
         print('\n' + '=' * 38)
@@ -113,28 +118,26 @@ class omok:
         print('=' * 38 + '\n')
 
     def showImg(self):
-        plt.imshow(np.asarray(self.img))
-        plt.pause(3)
-        plt.close()
+        cv2.namedWindow('omok')
+
+    def drawStone(self, action):
+        x, y = 20 * (action[0] + 1), 20 * (action[1] + 1)
+        color = None
+
+        if self.turn == 1: color = (0, 0, 0)
+        else: color = (255, 255, 255)
+
+        self.img = cv2.circle(self.img, (action[0], action[1]), 5, color, -1)
 
     def step(self, action): 
         self.board[action[0]][action[1]] = self.turn
 
-        x, y = 20 * (action[0] + 1), 20 * (action[1] + 1)
-        color = None
-
-        if self.turn == 1: color = 'black'
-        else: color = 'white'
-
-        self.draw.ellipse((x-5, y-5, x+5, y+5), fill=color)
-
-        for k in range(4):
-            self.lth[action[0]][action[1]][k] = 1
+        if self.opt.SHOW_IMG:
+            self.drawStone(action)
+            cv2.imshow('omok', self.img)
+            cv2.waitKey(200)
             
         rwd, done = self.updateLth(action)    
-
-        if done: rwd += 10
-
         self.turn *= -1 # change turn
 
         return done, rwd
