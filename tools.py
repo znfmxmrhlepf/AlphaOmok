@@ -14,6 +14,19 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
+def restore(sess):
+    saver = tf.train.Saver()
+    ckpt = tf.train.get_checkpoint_state("checkpoints")
+
+    if ckpt and ckpt.model_checkpoint_path:
+        saver.restore(sess, ckpt.model_checkpoint_path)
+        print("Successfully loaded:", ckpt.model_checkpoint_path)
+
+    else:
+        print("Could not find old network weights")
+
+    return saver
+
 def getOptions():
     
     parser = argparse.ArgumentParser()
@@ -22,9 +35,12 @@ def getOptions():
     parser.add_argument("--MAX_LENGTH", type=int, default=5, help="max length of stone")
     parser.add_argument("--SHOW_IMG", type=str2bool, default=False)
     parser.add_argument("--WINDOW_SIZE", type=int, default=1, help="size of window. ex) 1, 2, 3, ...")
-    parser.add_argument("--MAX_MEM_SIZE", type=int, default=2000)
-    parser.add_argument("--BATCH_SIZE", type=int, default=128)
+    parser.add_argument("--MEM_SIZE", type=int, default=400)
+    parser.add_argument("--BATCH_SIZE", type=int, default=20)
     parser.add_argument("--PAST_DECAY", type=float, default=0.75)
+    parser.add_argument("--GAMMA", type=float, default=0.9)
+    parser.add_argument("--LR", type=float, default=1e-4)
+    parser.add_argument("--MAX_EPISODE", type=int, default=3000)
 
     parser.add_argument("--OBS_DIM", type=int, default=12)
     
@@ -46,7 +62,7 @@ def getOptions():
     parser.add_argument("--INI_EPS", type=float, default=1)
     parser.add_argument("--FIN_EPS", type=float, default=1e-4)
     parser.add_argument("--EPS_DECAY", type=float, default=0.95)
-    parser.add_argument("--EPS_STEPS", type=int, default=10)
+    parser.add_argument("--EPS_STEP", type=int, default=10)
 
     options = parser.parse_args()
 
@@ -55,6 +71,11 @@ def getOptions():
 def argMax2D(x):
     am = np.argmax(x.flatten())
     return [am // x.shape[1], am % x.shape[1]]
+
+def idx2oh(x, shape):
+    b = np.zeros(shape, dtype=int)
+    b[x[0]][x[1]] = 1
+    return b
 
 class memory:
 
@@ -69,12 +90,12 @@ class memory:
         if self.pointer == self.shape[0]:
             self.pointer = 0
 
-class agent:
+class qAgent:
     def __init__(self, opt):
-        self.obsMem = memory([opt.MAX_MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE])
-        self.actMem = memory([opt.MAX_MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE])
-        self.rwdMem = memory([opt.MAX_MEM_SIZE, ])
-        self.nobsMem = self.obsMem = memory([opt.MAX_MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE])
+        self.obsMem = memory([opt.MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE, opt.OBS_DIM])
+        self.actMem = memory([opt.MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE])
+        self.rwdMem = memory([opt.MEM_SIZE, ])
+        self.nobsMem = memory([opt.MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE, opt.OBS_DIM])
         self.opt = opt
         self.eps = opt.INI_EPS
 
@@ -99,14 +120,12 @@ class agent:
 
         return obs, tf.squeeze(h[6])
 
-    # Epsilon decay
+    # Epsilon Greedy
     def smpAct(self, Q, feed):
         if random.random() <= self.eps:
-            return [random.randrange(self.opt.GAME_SIZE), random.randrange(self.opt.GAME_SIZE)]
+            p = [random.randrange(self.opt.GAME_SIZE), random.randrange(self.opt.GAME_SIZE)]
         
         else:
-            return argMax2D(Q.eval(feed_dict=feed))
+            p = argMax2D(Q.eval(feed_dict=feed))
 
-        # action = np.zeros([self.opt.GAME_SIZE, self.opt.GAME_SIZE], dtype=int)
-        # action[i][j] = 1
-        # return action
+        return p, idx2oh(p, [self.opt.GAME_SIZE, self.opt.GAME_SIZE])

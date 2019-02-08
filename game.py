@@ -51,6 +51,8 @@ class omok:
 
         self.stage = 1
         self.past = np.zeros([self.opt.GAME_SIZE, self.opt.GAME_SIZE], dtype=float)
+        
+        return self.getState()
 
     def getStone(self, p):
         return self.board[p[0]][p[1]]
@@ -58,7 +60,7 @@ class omok:
     def updateLth(self, act):
         c = np.array(act)
         maxLth = 0
-        sumLth = 1
+        sumLth = 0
 
         for k in range(4):
             l = [0, 0]
@@ -97,7 +99,7 @@ class omok:
 
     def showImage(self):
         cv2.imshow('omok', self.img)
-        cv2.waitKey(0)
+        cv2.waitKey(1)
 
     def drawStone(self, act):
         m = self.m
