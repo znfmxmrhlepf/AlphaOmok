@@ -17,8 +17,12 @@ class omok:
         self.opt = opt
         self.lth = np.zeros([opt.GAME_SIZE, opt.GAME_SIZE, 4], dtype=int)
         self.m = 20 * self.opt.WINDOW_SIZE
-        self.img = self.getDefaultImg()
-        
+        if opt.SHOW_IMG:
+            self.img = self.getDefaultImg()
+            cv2.namedWindow('omok')
+            self.showImage()
+        self.stage = 1
+        self.past = np.zeros([opt.GAME_SIZE, opt.GAME_SIZE], dtype=float)
 
     def getDefaultImg(self):
         m = self.m
@@ -33,13 +37,20 @@ class omok:
         return img
 
     def safe(self, p):
-        isSafe = 0 <= p[0] < self.opt.GAME_SIZE and 0 <= p[1] < self.opt.GAME_SIZE
+        isSafe = (0 <= p[0] < self.opt.GAME_SIZE and 0 <= p[1] < self.opt.GAME_SIZE)
         return isSafe
 
     def reset(self):
-        self.board = np.zeros()
+        self.board = np.zeros([self.opt.GAME_SIZE, self.opt.GAME_SIZE], dtype=int)
         self.turn = omok.STONE_1
-        self.img, self.draw = self.getDefaultImg()
+        self.lth = np.zeros([self.opt.GAME_SIZE, self.opt.GAME_SIZE, 4], dtype=int)
+
+        if self.opt.SHOW_IMG:
+            self.img = self.getDefaultImg()
+            self.showImage()
+
+        self.stage = 1
+        self.past = np.zeros([self.opt.GAME_SIZE, self.opt.GAME_SIZE], dtype=float)
 
     def getStone(self, p):
         return self.board[p[0]][p[1]]
@@ -84,13 +95,9 @@ class omok:
 
         print('=' * 2 * self.opt.GAME_SIZE + '\n')
 
-    def createWindow(self):
-        cv2.namedWindow('omok')
-        self.showImage()
-
     def showImage(self):
         cv2.imshow('omok', self.img)
-        cv2.waitKey(1)
+        cv2.waitKey(0)
 
     def drawStone(self, act):
         m = self.m
@@ -102,8 +109,23 @@ class omok:
 
         self.img = cv2.circle(self.img, (x, y), 7 * self.opt.WINDOW_SIZE, color, -1)
 
+    def getState(self):
+        curState = np.equal(self.board, self.turn)
+        oppState = np.equal(self.board, -1 * self.turn)
+        noneState = np.equal(self.board, omok.STONE_NONE)
+
+        state = np.concatenate((np.dstack((self.turn * self.board, curState, oppState, noneState)), 
+                        np.multiply(self.lth, np.tile(np.expand_dims(curState, axis=-1), (1, 1, 4))),
+                        np.multiply(self.lth, np.tile(np.expand_dims(oppState, axis=-1), (1, 1, 4)))), axis=-1)
+                        # feature map
+        
+        return state
+
     def step(self, act): 
         WrongAct = abs(self.board[act[0]][act[1]])
+
+        self.past *= self.opt.PAST_DECAY 
+        self.past[act[0]][act[1]] = 1
 
         self.board[act[0]][act[1]] = self.turn
 
@@ -112,22 +134,14 @@ class omok:
             self.showImage()
             
         rwd, done = self.updateLth(act)    
+
         if WrongAct:
             done = True
             rwd = -20
 
-        curState = np.equal(self.board, self.turn)
-        oppState = np.equal(self.board, -1 * self.turn)
-        noneState = np.equal(self.board, omok.STONE_NONE)
-
-        brdState = np.dstack((self.turn * self.board,
-                        curState, oppState, noneState))
-
-        state = np.concatenate((brdState, 
-                        np.multiply(self.lth, np.tile(np.expand_dims(curState, axis=-1), (1, 1, 4))),
-                        np.multiply(self.lth, np.tile(np.expand_dims(oppState, axis=-1), (1, 1, 4)))), axis=-1)
-                        # feature map
-
+        state = self.getState()
+        
+        self.stage += 1
         self.turn *= -1 # change turn
 
         return state, done, rwd

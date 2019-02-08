@@ -1,17 +1,28 @@
 from tools import getOptions
+from tools import agent
+from tools import argMax2D
 from game import omok
+import tensorflow as tf
+import time
+import numpy as np
 
-opts = getOptions()
-game = omok(opts)
+np.set_printoptions(precision=2)
+
+opt = getOptions()
+game = omok(opt)
 
 done = False
 rwd = 0
 
-game.createWindow()
+agent = agent(opt)
+obs, q = agent.valueNet()
 
+sess = tf.InteractiveSession()
+sess.run(tf.global_variables_initializer())
+
+state = game.getState()
 while not done:
-    i, j = input().split()
-    act = [int(i), int(j)]
-    obs, done, rwd = game.step(act)
-
+    act = agent.smpAct(q, {obs: [state]})
+    state, done, rwd = game.step(act)
+    
     print(rwd)
