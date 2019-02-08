@@ -35,7 +35,7 @@ def getOptions():
     parser.add_argument("--H5_SIZE", type=int, default=48)
     parser.add_argument("--H6_SIZE", type=int, default=1)
 
-    #KERNEL SIZE
+    # Kernel size
     parser.add_argument("--K1_SIZE", type=int, default=7)
     parser.add_argument("--K2_SIZE", type=int, default=5)
     parser.add_argument("--K3_SIZE", type=int, default=5)
