@@ -62,28 +62,38 @@ class omok:
         maxLth = 0
         sumLth = 0
 
+        rwd = (9 - abs(c[0]-9) - abs(c[1]-9)) / 3
+        
+        kernel = self.board[max(0, c[0]-3):min(self.opt.GAME_SIZE, c[0]+4)][max(0, c[1]-3):min(self.opt.GAME_SIZE, c[1]+4)]
+        rwd += np.sum(np.equal(kernel, self.turn)) / 2
+
         for k in range(4):
             l = [0, 0]
             
             for i, m in enumerate([-1, 1]):
                 n = c + m * omok.d[k]
-            
-                while self.safe(n) and self.getStone(n)==self.turn:
+              
+                if self.safe(n) and self.getStone(n) == -1 * self.turn:
+                    rwd += self.lth[n[0]][n[1]][k]
+
+                while self.safe(n) and self.getStone(n) == self.turn:
                     l[i] += m
                     n += m * omok.d[k]
-            
+      
+
             L = l[1] - l[0] + 1
             maxLth = max(L, maxLth)
-            sumLth += L - 1
+            sumLth += L
 
             for i in range(l[0], l[1] + 1):
                 cp = c + i * omok.d[k]
-                self.lth[cp[0]][cp[1]][k] = L                
+                self.lth[cp[0]][cp[1]][k] = L - 1
+
                 
-        rwd = sumLth
+        rwd += sumLth * 2
         done = (maxLth >= self.opt.MAX_LENGTH)
         
-        if done:    rwd += 10
+        if done:    rwd += 20
 
         return rwd, done
 

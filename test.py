@@ -22,8 +22,8 @@ sess.run(tf.global_variables_initializer())
 
 state = game.getState()
 while not done:
-    act, actBrd = agent.smpAct(q, {obs: [state]})
-    print(actBrd)
+    i, j = input().split()
+    act = int(i), int(j)
     state, done, rwd = game.step(act)
     
     print(rwd)

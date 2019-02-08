@@ -33,7 +33,7 @@ def getOptions():
 
     parser.add_argument("--GAME_SIZE", type=int, default=19, help="size of board")
     parser.add_argument("--MAX_LENGTH", type=int, default=5, help="max length of stone")
-    parser.add_argument("--SHOW_IMG", type=str2bool, default=False)
+    parser.add_argument("--SHOW_IMG", type=str2bool, default=True)
     parser.add_argument("--WINDOW_SIZE", type=int, default=1, help="size of window. ex) 1, 2, 3, ...")
     parser.add_argument("--MEM_SIZE", type=int, default=400)
     parser.add_argument("--BATCH_SIZE", type=int, default=20)
@@ -62,7 +62,7 @@ def getOptions():
     parser.add_argument("--INI_EPS", type=float, default=1)
     parser.add_argument("--FIN_EPS", type=float, default=1e-4)
     parser.add_argument("--EPS_DECAY", type=float, default=0.95)
-    parser.add_argument("--EPS_STEP", type=int, default=10)
+    parser.add_argument("--EPS_STEP", type=int, default=100)
 
     options = parser.parse_args()
 
