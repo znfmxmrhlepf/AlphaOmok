@@ -31,38 +31,39 @@ def getOptions():
     
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--GAME_SIZE", type=int, default=19, help="size of board")
-    parser.add_argument("--MAX_LENGTH", type=int, default=5, help="max length of stone")
-    parser.add_argument("--SHOW_IMG", type=str2bool, default=True)
+    parser.add_argument("--GAME_SIZE", type=int, default=10, help="size of board")
+    parser.add_argument("--MAX_LENGTH", type=int, default=4, help="max length of stone")
+    parser.add_argument("--SHOW_IMG", type=str2bool, default=False)
     parser.add_argument("--WINDOW_SIZE", type=int, default=1, help="size of window. ex) 1, 2, 3, ...")
-    parser.add_argument("--MEM_SIZE", type=int, default=400)
-    parser.add_argument("--BATCH_SIZE", type=int, default=20)
+    parser.add_argument("--MEM_SIZE", type=int, default=2000)
+    parser.add_argument("--BATCH_SIZE", type=int, default=128)
     parser.add_argument("--PAST_DECAY", type=float, default=0.75)
-    parser.add_argument("--GAMMA", type=float, default=0.9)
-    parser.add_argument("--LR", type=float, default=1e-4)
-    parser.add_argument("--MAX_EPISODE", type=int, default=3000)
+    parser.add_argument("--GAMMA", type=float, default=0.8)
+    parser.add_argument("--LR", type=float, default=1e-5)
+    parser.add_argument("--MAX_EPISODE", type=int, default=3000000)
 
     parser.add_argument("--OBS_DIM", type=int, default=12)
     
+    parser.add_argument("--NUM_LAYER", type=int, default=3)
     parser.add_argument("--H1_SIZE", type=int, default=48)
-    parser.add_argument("--H2_SIZE", type=int, default=96)
-    parser.add_argument("--H3_SIZE", type=int, default=96)
-    parser.add_argument("--H4_SIZE", type=int, default=96)
-    parser.add_argument("--H5_SIZE", type=int, default=48)
-    parser.add_argument("--H6_SIZE", type=int, default=1)
+    parser.add_argument("--H2_SIZE", type=int, default=48)
+    parser.add_argument("--H3_SIZE", type=int, default=1)
+    # parser.add_argument("--H4_SIZE", type=int, default=96)
+    # parser.add_argument("--H5_SIZE", type=int, default=48)
+    # parser.add_argument("--H6_SIZE", type=int, default=1)
 
     # Kernel size
-    parser.add_argument("--K1_SIZE", type=int, default=7)
-    parser.add_argument("--K2_SIZE", type=int, default=5)
-    parser.add_argument("--K3_SIZE", type=int, default=5)
-    parser.add_argument("--K4_SIZE", type=int, default=3)
-    parser.add_argument("--K5_SIZE", type=int, default=3)
-    parser.add_argument("--K6_SIZE", type=int, default=1)
+    parser.add_argument("--K1_SIZE", type=int, default=5)
+    parser.add_argument("--K2_SIZE", type=int, default=3)
+    parser.add_argument("--K3_SIZE", type=int, default=1)
+    # parser.add_argument("--K4_SIZE", type=int, default=3)
+    # parser.add_argument("--K5_SIZE", type=int, default=3)
+    # parser.add_argument("--K6_SIZE", type=int, default=1)
 
     parser.add_argument("--INI_EPS", type=float, default=1)
-    parser.add_argument("--FIN_EPS", type=float, default=1e-4)
-    parser.add_argument("--EPS_DECAY", type=float, default=0.95)
-    parser.add_argument("--EPS_STEP", type=int, default=100)
+    parser.add_argument("--FIN_EPS", type=float, default=0.1)
+    parser.add_argument("--EPS_DECAY", type=float, default=0.98)
+    parser.add_argument("--EPS_STEP", type=int, default=40)
 
     options = parser.parse_args()
 
@@ -86,7 +87,8 @@ class memory:
 
     def push(self, val):
         self.mem[self.pointer] = val
-        
+        self.pointer += 1
+
         if self.pointer == self.shape[0]:
             self.pointer = 0
 
@@ -99,31 +101,42 @@ class qAgent:
         self.opt = opt
         self.eps = opt.INI_EPS
 
+    def randPos(self, board):
+        p = [0, 0]
+
+        while board[p[0]][p[1]]:
+            p = [random.randrange(self.opt.GAME_SIZE), random.randrange(self.opt.GAME_SIZE)]
+
+        return p
+
     def valueNet(self):
         opt = self.opt
         obs = tf.placeholder(tf.float32, [None, opt.GAME_SIZE, opt.GAME_SIZE, opt.OBS_DIM])
+        brd = tf.placeholder(tf.float32, [None, opt.GAME_SIZE, opt.GAME_SIZE])
 
         s = [1, 1, 1, 1]
-        K = [None, opt.K1_SIZE, opt.K2_SIZE, opt.K3_SIZE, opt.K4_SIZE, opt.K5_SIZE, opt.K6_SIZE]
-        L = [opt.OBS_DIM, opt.H1_SIZE, opt.H2_SIZE, opt.H3_SIZE, opt.H4_SIZE, opt.H5_SIZE, opt.H6_SIZE]
+        K = [None, opt.K1_SIZE, opt.K2_SIZE, opt.K3_SIZE]
+        L = [opt.OBS_DIM, opt.H1_SIZE, opt.H2_SIZE, opt.H3_SIZE]
 
 
-        W = [None for _ in range(7)]
-        b = [None for _ in range(7)]
-        h = [None for _ in range(7)]
+        W = [None for _ in range(opt.NUM_LAYER + 1)]
+        b = [None for _ in range(opt.NUM_LAYER + 1)]
+        h = [None for _ in range(opt.NUM_LAYER + 1)]
         h[0] = obs
 
-        for i in range(1, 7):
+        for i in range(1, opt.NUM_LAYER + 1):
             W[i] = tf.Variable(tf.truncated_normal(shape=[K[i], K[i], L[i-1], L[i]], stddev=5e-2))
             b[i] = tf.Variable(tf.truncated_normal(shape=[L[i]], stddev=5e-2))
             h[i] = tf.nn.relu(tf.nn.conv2d(h[i-1], W[i], strides=s, padding='SAME') + b[i])
 
-        return obs, tf.squeeze(h[6])
+        return obs, tf.squeeze(h[opt.NUM_LAYER]) - tf.abs(brd) * 15
+
+
 
     # Epsilon Greedy
-    def smpAct(self, Q, feed):
+    def smpAct(self, Q, feed, board):
         if random.random() <= self.eps:
-            p = [random.randrange(self.opt.GAME_SIZE), random.randrange(self.opt.GAME_SIZE)]
+            p = self.randPos(board)
         
         else:
             p = argMax2D(Q.eval(feed_dict=feed))

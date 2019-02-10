@@ -6,7 +6,7 @@ import tensorflow as tf
 import time
 import numpy as np
 
-np.set_printoptions(precision=2)
+np.set_printoptions(precision=2, threshold=np.nan)
 
 opt = getOptions()
 game = omok(opt)
@@ -20,10 +20,13 @@ obs, q = agent.valueNet()
 sess = tf.InteractiveSession()
 sess.run(tf.global_variables_initializer())
 
+
 state = game.getState()
+
+
 while not done:
-    i, j = input().split()
-    act = int(i), int(j)
-    state, done, rwd = game.step(act)
+    act, actbrd = agent.smpAct(q, {obs: [state]}, game.board)
+    state, nstate, done, rwd = game.step(act)
     
+
     print(rwd)

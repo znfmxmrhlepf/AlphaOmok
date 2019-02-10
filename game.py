@@ -60,12 +60,16 @@ class omok:
     def updateLth(self, act):
         c = np.array(act)
         maxLth = 0
-        sumLth = 0
+        sumLth = 1
 
-        rwd = (9 - abs(c[0]-9) - abs(c[1]-9)) / 3
+        rwd = 0
         
-        kernel = self.board[max(0, c[0]-3):min(self.opt.GAME_SIZE, c[0]+4)][max(0, c[1]-3):min(self.opt.GAME_SIZE, c[1]+4)]
-        rwd += np.sum(np.equal(kernel, self.turn)) / 2
+        kernel = self.board[max(0, c[0]-2) : min(self.opt.GAME_SIZE, c[0]+3), 
+                            max(0, c[1]-2) : min(self.opt.GAME_SIZE, c[1]+3)]
+        rwd += (np.sum(np.equal(kernel, self.turn)) - 1) / 2
+ 
+        rms1 = 0
+        rms2 = 0
 
         for k in range(4):
             l = [0, 0]
@@ -74,26 +78,26 @@ class omok:
                 n = c + m * omok.d[k]
               
                 if self.safe(n) and self.getStone(n) == -1 * self.turn:
-                    rwd += self.lth[n[0]][n[1]][k]
+                    rms1 += self.lth[n[0]][n[1]][k]**2
 
                 while self.safe(n) and self.getStone(n) == self.turn:
                     l[i] += m
                     n += m * omok.d[k]
       
-
             L = l[1] - l[0] + 1
             maxLth = max(L, maxLth)
-            sumLth += L
+            sumLth += L - 1
+            rms2 += (L - 1) ** 2
 
             for i in range(l[0], l[1] + 1):
                 cp = c + i * omok.d[k]
-                self.lth[cp[0]][cp[1]][k] = L - 1
+                self.lth[cp[0]][cp[1]][k] = L
 
+        rwd += rms1 ** 0.5 + 2 * rms2 ** 0.5 
                 
-        rwd += sumLth * 2
         done = (maxLth >= self.opt.MAX_LENGTH)
         
-        if done:    rwd += 20
+        if done:    rwd += 5
 
         return rwd, done
 
@@ -109,7 +113,7 @@ class omok:
 
     def showImage(self):
         cv2.imshow('omok', self.img)
-        cv2.waitKey(1)
+        cv2.waitKey(500)
 
     def drawStone(self, act):
         m = self.m
@@ -130,12 +134,9 @@ class omok:
                         np.multiply(self.lth, np.tile(np.expand_dims(curState, axis=-1), (1, 1, 4))),
                         np.multiply(self.lth, np.tile(np.expand_dims(oppState, axis=-1), (1, 1, 4)))), axis=-1)
                         # feature map
-        
         return state
 
     def step(self, act): 
-        WrongAct = abs(self.board[act[0]][act[1]])
-
         self.past *= self.opt.PAST_DECAY 
         self.past[act[0]][act[1]] = 1
 
@@ -147,13 +148,11 @@ class omok:
             
         rwd, done = self.updateLth(act)    
 
-        if WrongAct:
-            done = True
-            rwd = -20
-
         state = self.getState()
-        
-        self.stage += 1
-        self.turn *= -1 # change turn
 
-        return state, done, rwd
+        self.turn *= -1
+        nstate = self.getState()
+
+        self.stage += 1
+
+        return state, nstate, done, rwd
