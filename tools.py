@@ -98,6 +98,9 @@ class qAgent:
         self.actMem = memory([opt.MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE])
         self.rwdMem = memory([opt.MEM_SIZE, ])
         self.nobsMem = memory([opt.MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE, opt.OBS_DIM])
+        self.brdMem = memory([opt.MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE])
+        self.nbrdMem = memory([opt.MEM_SIZE, opt.GAME_SIZE, opt.GAME_SIZE])
+
         self.opt = opt
         self.eps = opt.INI_EPS
 
@@ -129,7 +132,9 @@ class qAgent:
             b[i] = tf.Variable(tf.truncated_normal(shape=[L[i]], stddev=5e-2))
             h[i] = tf.nn.relu(tf.nn.conv2d(h[i-1], W[i], strides=s, padding='SAME') + b[i])
 
-        return obs, tf.squeeze(h[opt.NUM_LAYER]) - tf.abs(brd) * 15
+        Q = tf.squeeze(h[opt.NUM_LAYER]) - tf.abs(brd) * 15
+
+        return obs, brd, Q
 
 
 

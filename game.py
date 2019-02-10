@@ -21,7 +21,6 @@ class omok:
             self.img = self.getDefaultImg()
             cv2.namedWindow('omok')
             self.showImage()
-        self.stage = 1
         self.past = np.zeros([opt.GAME_SIZE, opt.GAME_SIZE], dtype=float)
 
     def getDefaultImg(self):
@@ -49,7 +48,6 @@ class omok:
             self.img = self.getDefaultImg()
             self.showImage()
 
-        self.stage = 1
         self.past = np.zeros([self.opt.GAME_SIZE, self.opt.GAME_SIZE], dtype=float)
         
         return self.getState()
@@ -113,7 +111,7 @@ class omok:
 
     def showImage(self):
         cv2.imshow('omok', self.img)
-        cv2.waitKey(500)
+        cv2.waitKey(1)
 
     def drawStone(self, act):
         m = self.m
@@ -148,11 +146,9 @@ class omok:
             
         rwd, done = self.updateLth(act)    
 
-        state = self.getState()
-
-        self.turn *= -1
         nstate = self.getState()
-
-        self.stage += 1
+        
+        self.turn *= -1
+        state = self.getState()
 
         return state, nstate, done, rwd
