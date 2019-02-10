@@ -96,8 +96,42 @@ class omok:
         done = (maxLth >= self.opt.MAX_LENGTH)
         
         if done:    rwd += 5
+        if self.isOver():
+            rwd = -5
+            done = True
+            print('over')
 
         return rwd, done
+
+    def isOver(self):
+        checked = np.zeros([self.opt.GAME_SIZE, self.opt.GAME_SIZE, 4])
+
+        for i in range(self.opt.GAME_SIZE):
+            for j in range(self.opt.GAME_SIZE):
+                c = np.array([i, j])
+                if self.board[i][j] != -1 * self.turn: continue
+                for k in range(4):
+                    if checked[i][j][k] or self.lth[i][j][k] != self.opt.MAX_LENGTH - 1: continue
+                    
+                    checked[i][j][k] = 1
+                    
+                    l = [0, 0]
+                    b = [False, False]
+                    for h, m in enumerate([-1, 1]):
+                        n = c + m * omok.d[k]
+
+                        while self.safe(n) and self.getStone(n) == -1 * self.turn:
+                            l[h] += m
+                            checked[n[0]][n[1]][k] = 1
+                            n += m * omok.d[k]
+
+                        if self.safe(n) and self.getStone(n) == omok.STONE_NONE:
+                            b[h] = True
+                        
+                    if b[0] and b[1]:
+                        return True
+        
+        return False
 
     def showVal(self):
         print('\n' + '=' * 2 * self.opt.GAME_SIZE)

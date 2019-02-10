@@ -38,7 +38,7 @@ def getOptions():
     parser.add_argument("--MEM_SIZE", type=int, default=2000)
     parser.add_argument("--BATCH_SIZE", type=int, default=128)
     parser.add_argument("--PAST_DECAY", type=float, default=0.75)
-    parser.add_argument("--GAMMA", type=float, default=0.8)
+    parser.add_argument("--GAMMA", type=float, default=0.95)
     parser.add_argument("--LR", type=float, default=1e-5)
     parser.add_argument("--MAX_EPISODE", type=int, default=3000000)
 
@@ -61,9 +61,9 @@ def getOptions():
     # parser.add_argument("--K6_SIZE", type=int, default=1)
 
     parser.add_argument("--INI_EPS", type=float, default=1)
-    parser.add_argument("--FIN_EPS", type=float, default=0.1)
+    parser.add_argument("--FIN_EPS", type=float, default=0.2)
     parser.add_argument("--EPS_DECAY", type=float, default=0.98)
-    parser.add_argument("--EPS_STEP", type=int, default=40)
+    parser.add_argument("--EPS_STEP", type=int, default=80)
 
     options = parser.parse_args()
 
@@ -105,7 +105,7 @@ class qAgent:
         self.eps = opt.INI_EPS
 
     def randPos(self, board):
-        p = [0, 0]
+        p = [random.randrange(self.opt.GAME_SIZE), random.randrange(self.opt.GAME_SIZE)]
 
         while board[p[0]][p[1]]:
             p = [random.randrange(self.opt.GAME_SIZE), random.randrange(self.opt.GAME_SIZE)]
@@ -139,11 +139,11 @@ class qAgent:
 
 
     # Epsilon Greedy
-    def smpAct(self, Q, feed, board):
-        if random.random() <= self.eps:
+    def smpAct(self, Q, feed, board, step):
+        if random.random() <= self.eps or step == 1:
             p = self.randPos(board)
         
         else:
             p = argMax2D(Q.eval(feed_dict=feed))
-
+ 
         return p, idx2oh(p, [self.opt.GAME_SIZE, self.opt.GAME_SIZE])

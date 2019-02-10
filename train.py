@@ -43,7 +43,7 @@ def trainer(env, opt):
             agent.obsMem.push(state)
             agent.brdMem.push(env.board)
 
-            action, actBrd = agent.smpAct(Q1, {obs : [state], brd : [env.board]}, env.board)
+            action, actBrd = agent.smpAct(Q1, {obs : [state], brd : [env.board]}, env.board, step)
             state, nstate, done, reward = env.step(action)
             score += reward
 
