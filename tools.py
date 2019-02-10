@@ -31,8 +31,8 @@ def getOptions():
     
     parser = argparse.ArgumentParser()
 
-    parser.add_argument("--GAME_SIZE", type=int, default=10, help="size of board")
-    parser.add_argument("--MAX_LENGTH", type=int, default=4, help="max length of stone")
+    parser.add_argument("--GAME_SIZE", type=int, default=19, help="size of board")
+    parser.add_argument("--MAX_LENGTH", type=int, default=5, help="max length of stone")
     parser.add_argument("--SHOW_IMG", type=str2bool, default=False)
     parser.add_argument("--WINDOW_SIZE", type=int, default=1, help="size of window. ex) 1, 2, 3, ...")
     parser.add_argument("--MEM_SIZE", type=int, default=2000)
@@ -44,25 +44,25 @@ def getOptions():
 
     parser.add_argument("--OBS_DIM", type=int, default=12)
     
-    parser.add_argument("--NUM_LAYER", type=int, default=3)
+    parser.add_argument("--NUM_LAYER", type=int, default=6)
     parser.add_argument("--H1_SIZE", type=int, default=48)
     parser.add_argument("--H2_SIZE", type=int, default=48)
-    parser.add_argument("--H3_SIZE", type=int, default=1)
-    # parser.add_argument("--H4_SIZE", type=int, default=96)
-    # parser.add_argument("--H5_SIZE", type=int, default=48)
-    # parser.add_argument("--H6_SIZE", type=int, default=1)
+    parser.add_argument("--H3_SIZE", type=int, default=96)
+    parser.add_argument("--H4_SIZE", type=int, default=96)
+    parser.add_argument("--H5_SIZE", type=int, default=48)
+    parser.add_argument("--H6_SIZE", type=int, default=1)
 
     # Kernel size
-    parser.add_argument("--K1_SIZE", type=int, default=5)
-    parser.add_argument("--K2_SIZE", type=int, default=3)
-    parser.add_argument("--K3_SIZE", type=int, default=1)
-    # parser.add_argument("--K4_SIZE", type=int, default=3)
-    # parser.add_argument("--K5_SIZE", type=int, default=3)
-    # parser.add_argument("--K6_SIZE", type=int, default=1)
+    parser.add_argument("--K1_SIZE", type=int, default=7)
+    parser.add_argument("--K2_SIZE", type=int, default=5)
+    parser.add_argument("--K3_SIZE", type=int, default=5)
+    parser.add_argument("--K4_SIZE", type=int, default=3)
+    parser.add_argument("--K5_SIZE", type=int, default=3)
+    parser.add_argument("--K6_SIZE", type=int, default=1)
 
     parser.add_argument("--INI_EPS", type=float, default=1)
     parser.add_argument("--FIN_EPS", type=float, default=0.2)
-    parser.add_argument("--EPS_DECAY", type=float, default=0.98)
+    parser.add_argument("--EPS_DECAY", type=float, default=0.97)
     parser.add_argument("--EPS_STEP", type=int, default=80)
 
     options = parser.parse_args()
@@ -118,8 +118,8 @@ class qAgent:
         brd = tf.placeholder(tf.float32, [None, opt.GAME_SIZE, opt.GAME_SIZE])
 
         s = [1, 1, 1, 1]
-        K = [None, opt.K1_SIZE, opt.K2_SIZE, opt.K3_SIZE]
-        L = [opt.OBS_DIM, opt.H1_SIZE, opt.H2_SIZE, opt.H3_SIZE]
+        K = [None, opt.K1_SIZE, opt.K2_SIZE, opt.K3_SIZE, opt.K4_SIZE, opt.K5_SIZE, opt.K6_SIZE]
+        L = [opt.OBS_DIM, opt.H1_SIZE, opt.H2_SIZE, opt.H3_SIZE, opt.H4_SIZE, opt.H5_SIZE, opt.H6_SIZE]
 
 
         W = [None for _ in range(opt.NUM_LAYER + 1)]
